@@ -1,5 +1,6 @@
 package com.ngyewkong.springbatchdemo.config;
 
+import com.ngyewkong.springbatchdemo.service.SecondTasklet;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
@@ -22,6 +23,10 @@ public class SampleJob {
     @Autowired
     private StepBuilderFactory stepBuilderFactory;
 
+    // implementing second tasklet and its logic in service layer
+    @Autowired
+    private SecondTasklet secondTasklet;
+
     // sample job using tasklet
     // .start(step()) -> first step
     // .next(anotherstep()) -> subsequent steps
@@ -41,9 +46,10 @@ public class SampleJob {
     }
 
     // second step
+    // using secondTasklet which is autowired from SecondTasklet in service layer
     private Step secondStep() {
         return stepBuilderFactory.get("Second Step")
-                .tasklet(secondTask())
+                .tasklet(secondTasklet)
                 .build();
     }
 
@@ -57,14 +63,14 @@ public class SampleJob {
         };
     }
 
-    private Tasklet secondTask() {
-        return new Tasklet() {
-            @Override
-            public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-                System.out.println("This is second tasklet step");
-                return RepeatStatus.FINISHED;
-            }
-        };
-    }
+//    private Tasklet secondTask() {
+//        return new Tasklet() {
+//            @Override
+//            public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
+//                System.out.println("This is second tasklet step");
+//                return RepeatStatus.FINISHED;
+//            }
+//        };
+//    }
 
 }

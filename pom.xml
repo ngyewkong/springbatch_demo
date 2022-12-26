@@ -30,6 +30,9 @@
 			<artifactId>spring-boot-starter-jdbc</artifactId>
 		</dependency>
 
+<!--	important to have a sql db dependency
+		spring batch requires a db to store the job repo metadata
+		if not spring batch application will not run -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
