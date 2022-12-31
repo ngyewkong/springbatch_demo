@@ -1,5 +1,7 @@
 package com.ngyewkong.springbatchdemo.config;
 
+import com.ngyewkong.springbatchdemo.listener.FirstJobListener;
+import com.ngyewkong.springbatchdemo.listener.FirstStepListener;
 import com.ngyewkong.springbatchdemo.service.SecondTasklet;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -28,6 +30,14 @@ public class SampleJob {
     @Autowired
     private SecondTasklet secondTasklet;
 
+    // JobListener for firstJob
+    @Autowired
+    private FirstJobListener firstJobListener;
+
+    // StepListener for firstStep
+    @Autowired
+    private FirstStepListener firstStepListener;
+
     // sample job using tasklet
     // .incrementer()  to generate diff job instance id on each run of the springboot app
     // new RunIdIncrementer() generates the running id on each run
@@ -35,19 +45,24 @@ public class SampleJob {
     // making each run having an unique job instance id starting from 1
     // .start(step()) -> first step
     // .next(anotherstep()) -> subsequent steps
+    // .listener() -> to use custom JobListener that was implemented
+    // .build() -> build the whole job from jobBuilderFactory
     @Bean
     public Job firstJob() {
         return jobBuilderFactory.get("First Job")
                 .incrementer(new RunIdIncrementer())
                 .start(firstStep())
                 .next(secondStep())
+                .listener(firstJobListener)
                 .build();
     }
 
     // first step using Tasklet
+    // .listener() -> to use custom stepListener that was implemented
     private Step firstStep() {
         return stepBuilderFactory.get("First Step")
                 .tasklet(firstTask())
+                .listener(firstStepListener)
                 .build();
     }
 
@@ -64,6 +79,11 @@ public class SampleJob {
             @Override
             public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
                 System.out.println("This is first tasklet step");
+
+                // using the step execution context that stored existing key-value pair in step
+                // access in tasklet via chunkContext
+                // .getStepContext().getStepExecutionContext() returns a HashMap of the key value pair
+                System.out.println("Step Execution Context Key: testStepKey & Value: " + chunkContext.getStepContext().getStepExecutionContext().get("testStepKey"));
                 return RepeatStatus.FINISHED;
             }
         };
