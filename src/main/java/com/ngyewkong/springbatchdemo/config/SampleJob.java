@@ -6,6 +6,7 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
@@ -28,11 +29,16 @@ public class SampleJob {
     private SecondTasklet secondTasklet;
 
     // sample job using tasklet
+    // .incrementer()  to generate diff job instance id on each run of the springboot app
+    // new RunIdIncrementer() generates the running id on each run
+    // it implements the JobParametersIncrementer class
+    // making each run having an unique job instance id starting from 1
     // .start(step()) -> first step
     // .next(anotherstep()) -> subsequent steps
     @Bean
     public Job firstJob() {
         return jobBuilderFactory.get("First Job")
+                .incrementer(new RunIdIncrementer())
                 .start(firstStep())
                 .next(secondStep())
                 .build();
