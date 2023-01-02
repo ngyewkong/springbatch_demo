@@ -2,7 +2,10 @@ package com.ngyewkong.springbatchdemo.config;
 
 import com.ngyewkong.springbatchdemo.listener.FirstJobListener;
 import com.ngyewkong.springbatchdemo.listener.FirstStepListener;
+import com.ngyewkong.springbatchdemo.processor.FirstItemProcessor;
+import com.ngyewkong.springbatchdemo.reader.FirstItemReader;
 import com.ngyewkong.springbatchdemo.service.SecondTasklet;
+import com.ngyewkong.springbatchdemo.writer.FirstItemWriter;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
@@ -38,6 +41,16 @@ public class SampleJob {
     @Autowired
     private FirstStepListener firstStepListener;
 
+    // autowired the itemReader, itemProcessor, itemWriter used in chunk oriented step
+    @Autowired
+    private FirstItemReader firstItemReader;
+
+    @Autowired
+    private FirstItemProcessor firstItemProcessor;
+
+    @Autowired
+    private FirstItemWriter firstItemWriter;
+
     // sample job using tasklet
     // .incrementer()  to generate diff job instance id on each run of the springboot app
     // new RunIdIncrementer() generates the running id on each run
@@ -47,7 +60,9 @@ public class SampleJob {
     // .next(anotherstep()) -> subsequent steps
     // .listener() -> to use custom JobListener that was implemented
     // .build() -> build the whole job from jobBuilderFactory
-    @Bean
+
+    // comment out the bean annotation to prevent running of first job which is tasklet
+    // @Bean
     public Job firstJob() {
         return jobBuilderFactory.get("First Job")
                 .incrementer(new RunIdIncrementer())
@@ -98,5 +113,26 @@ public class SampleJob {
 //            }
 //        };
 //    }
+
+    // secondJob for chunk oriented step
+    @Bean
+    public Job secondJob() {
+        return jobBuilderFactory.get("Second Job - Chunk")
+                .incrementer(new RunIdIncrementer())
+                .start(firstChunkStep())
+                .build();
+    }
+
+    // chunk step need to define chunk size (how many records to process at one go
+    // .<InputType, Output Type>chunk(chunkSize)
+    // .reader(Reader).processor(Processor).writer(Writer).build() set the chunk step
+    public Step firstChunkStep() {
+        return stepBuilderFactory.get("First Chunk Step")
+                .<Integer, Long>chunk(3)
+                .reader(firstItemReader)
+                .processor(firstItemProcessor)
+                .writer(firstItemWriter)
+                .build();
+    }
 
 }
