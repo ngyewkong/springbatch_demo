@@ -62,7 +62,7 @@ public class SampleJob {
     // .build() -> build the whole job from jobBuilderFactory
 
     // comment out the bean annotation to prevent running of first job which is tasklet
-    // @Bean
+    @Bean
     public Job firstJob() {
         return jobBuilderFactory.get("First Job")
                 .incrementer(new RunIdIncrementer())
