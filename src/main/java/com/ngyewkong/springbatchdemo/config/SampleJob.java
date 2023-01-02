@@ -115,20 +115,25 @@ public class SampleJob {
 //    }
 
     // secondJob for chunk oriented step
+    // can use a combination of chunk-oriented & tasklet step in the same job
     @Bean
     public Job secondJob() {
         return jobBuilderFactory.get("Second Job - Chunk")
                 .incrementer(new RunIdIncrementer())
                 .start(firstChunkStep())
+                .next(secondStep())
                 .build();
     }
 
     // chunk step need to define chunk size (how many records to process at one go
     // .<InputType, Output Type>chunk(chunkSize)
     // .reader(Reader).processor(Processor).writer(Writer).build() set the chunk step
+
+    // itemProcessor is optional if there is no need to do processing between read and write
+    // itemReader & itemWriter are mandatory for chunk-oriented step
     public Step firstChunkStep() {
         return stepBuilderFactory.get("First Chunk Step")
-                .<Integer, Long>chunk(3)
+                .<Integer, Long>chunk(4)
                 .reader(firstItemReader)
                 .processor(firstItemProcessor)
                 .writer(firstItemWriter)
