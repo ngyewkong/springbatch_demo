@@ -1,5 +1,6 @@
 package com.ngyewkong.springbatchdemo.controller;
 
+import com.ngyewkong.springbatchdemo.service.JobService;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParameter;
 import org.springframework.batch.core.JobParameters;
@@ -22,43 +23,17 @@ import java.util.Map;
 @RequestMapping("/api/job")
 public class JobController {
 
-    // need to autowire joblauncher object, jobs in configuration
+    // autowired the JobService class
     @Autowired
-    private JobLauncher jobLauncher;
-
-    // use @Qualifier to prevent ambiguity since there are multiple Jobs Bean
-    // takes the name of the class firstJob() -> "firstJob"
-    // without @Qualifier spring will not be able to perform dependency injection
-    @Qualifier("firstJob")
-    @Autowired
-    private Job firstJob;
-
-    @Qualifier("secondJob")
-    @Autowired
-    private Job secondJob;
+    private JobService jobService;
 
     // GetMapping with route /api/job/start/jobName
     // {jobName} is being accessed using @PathVariable annotation jobName will be populated by {jobName}
     @GetMapping("/start/{jobName}")
     public String startJob(@PathVariable String jobName) throws JobInstanceAlreadyCompleteException, JobExecutionAlreadyRunningException, JobParametersInvalidException, JobRestartException {
 
-        // job parameters setup
-        // Map with <key, value> whereby value is JobParameter type
-        // setting params with current time in millisec -> jobInstance will be unique every single time
-        Map<String, JobParameter> params = new HashMap<>();
-        params.put("currentTime", new JobParameter(System.currentTimeMillis()));
-
-        // JobParameters take in a HashMap of keyvalue pair
-        JobParameters jobParameters = new JobParameters(params);
-
-        // does a check with the name provided in JobBuilderFactory.get("Job Name")
-        if (jobName.equals("First Job")) {
-            // jobLauncher takes in 2 arguments - jobObject & jobParameters
-            jobLauncher.run(firstJob, jobParameters);
-        } else if (jobName.equals("Second Job - Chunk")) {
-            // jobLauncher takes in 2 arguments - jobObject & jobParameters
-            jobLauncher.run(secondJob, jobParameters);
-        }
+        // call the JobService instance and the startJob() method
+        jobService.startJob(jobName);
 
         return "Job Started...";
     }
