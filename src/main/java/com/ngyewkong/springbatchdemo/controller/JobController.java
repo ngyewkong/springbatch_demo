@@ -2,21 +2,17 @@ package com.ngyewkong.springbatchdemo.controller;
 
 import com.ngyewkong.springbatchdemo.request.JobParamsRequest;
 import com.ngyewkong.springbatchdemo.service.JobService;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobParameter;
-import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersInvalidException;
-import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.launch.JobExecutionNotRunningException;
+import org.springframework.batch.core.launch.JobOperator;
+import org.springframework.batch.core.launch.NoSuchJobExecutionException;
 import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
 import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
 import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/job")
@@ -24,7 +20,7 @@ public class JobController {
 
     // autowired the JobService class
     @Autowired
-    private JobService jobService;
+    JobService jobService;
 
     // GetMapping with route /api/job/start/jobName
     // {jobName} is being accessed using @PathVariable annotation jobName will be populated by {jobName}
@@ -38,6 +34,19 @@ public class JobController {
         jobService.startJob(jobName, jobParamsList);
 
         return "Job Started...";
+    }
+
+    // Stop Job
+    // need to use JobOperator object to stop
+    // .stop() method takes in job executionId
+    @Autowired
+    private JobOperator jobOperator;
+
+    @GetMapping("/stop/{jobExecutionId}")
+    public String stopJob(@PathVariable long jobExecutionId) throws NoSuchJobExecutionException, JobExecutionNotRunningException {
+        jobOperator.stop(jobExecutionId);
+
+        return "Job Stopped...";
     }
 
 }
