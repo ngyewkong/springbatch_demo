@@ -4,12 +4,14 @@ import com.ngyewkong.springbatchdemo.listener.FirstJobListener;
 import com.ngyewkong.springbatchdemo.listener.FirstStepListener;
 import com.ngyewkong.springbatchdemo.model.StudentCsv;
 import com.ngyewkong.springbatchdemo.model.StudentJson;
+import com.ngyewkong.springbatchdemo.model.StudentXml;
 import com.ngyewkong.springbatchdemo.processor.FirstItemProcessor;
 import com.ngyewkong.springbatchdemo.reader.FirstItemReader;
 import com.ngyewkong.springbatchdemo.service.SecondTasklet;
 import com.ngyewkong.springbatchdemo.writer.FirstItemWriter;
 import com.ngyewkong.springbatchdemo.writer.StudentCsvItemWriter;
 import com.ngyewkong.springbatchdemo.writer.StudentJsonItemWriter;
+import com.ngyewkong.springbatchdemo.writer.StudentXmlItemWriter;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
@@ -25,12 +27,14 @@ import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.batch.item.json.JacksonJsonObjectReader;
 import org.springframework.batch.item.json.JsonItemReader;
+import org.springframework.batch.item.xml.StaxEventItemReader;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 
 import java.io.File;
 
@@ -164,6 +168,9 @@ public class SampleJob {
     @Autowired
     private StudentJsonItemWriter studentJsonItemWriter;
 
+    @Autowired
+    private StudentXmlItemWriter studentXmlItemWriter;
+
     @Bean
     public Job thirdJob() {
         return jobBuilderFactory.get("ItemReadersDemoJob")
@@ -177,9 +184,12 @@ public class SampleJob {
                 //.<StudentCsv, StudentCsv>chunk(4)
                 //// pass null as value will be read in from the jobParameters
                 //.reader(flatFileItemReader(null))
-                .<StudentJson, StudentJson>chunk(4)
-                .reader(jsonItemReader(null))
-                .writer(studentJsonItemWriter)
+                //.<StudentJson, StudentJson>chunk(4)
+                //.reader(jsonItemReader(null))
+                //.writer(studentJsonItemWriter)
+                .<StudentXml, StudentXml>chunk(4)
+                .reader(staxEventItemReader(null))
+                .writer(studentXmlItemWriter)
                 //.processor()
                 //.writer(studentCsvItemWriter)
                 .build();
@@ -253,6 +263,28 @@ public class SampleJob {
         jsonItemReader.setCurrentItemCount(2);
 
         return jsonItemReader;
+    }
+
+    // Xml Item Reader
+    // Stax -> Streaming API for XML provided by Spring Batch
+    @Bean
+    @StepScope
+    public StaxEventItemReader<StudentXml> staxEventItemReader(
+            @Value("#{jobParameters['inputXmlFile']}") FileSystemResource fileSystemResource) {
+        StaxEventItemReader<StudentXml> staxEventItemReader =
+                new StaxEventItemReader<>();
+        staxEventItemReader.setResource(fileSystemResource);
+
+        // .setFragmentRootElementName("student") -> follow xml
+        staxEventItemReader.setFragmentRootElementName("student");
+
+        // set the Jaxb2Marshaller with model class
+        // .setClassesToBeBound()
+        Jaxb2Marshaller jaxb2Marshaller = new Jaxb2Marshaller();
+        jaxb2Marshaller.setClassesToBeBound(StudentXml.class);
+        staxEventItemReader.setUnmarshaller(jaxb2Marshaller);
+
+        return staxEventItemReader;
     }
 
 }
