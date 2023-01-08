@@ -45,6 +45,7 @@ public class JobService {
         // setting params with current time in millisec -> jobInstance will be unique every single time
         Map<String, JobParameter> params = new HashMap<>();
         params.put("currentTime", new JobParameter(System.currentTimeMillis()));
+        params.put("inputFile", new JobParameter("inputfiles/student.csv"));
 
         // use the jobParamsList that is passed in
         // add it into the params HashMap which store as key-value pairs

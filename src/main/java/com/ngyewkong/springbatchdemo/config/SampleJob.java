@@ -13,6 +13,7 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -22,6 +23,7 @@ import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
@@ -166,19 +168,28 @@ public class SampleJob {
     public Step secondChunkStep() {
         return stepBuilderFactory.get("Item Readers Demo Step")
                 .<StudentCsv, StudentCsv>chunk(4)
-                .reader(flatFileItemReader())
+                // pass null as value will be read in from the jobParameters
+                .reader(flatFileItemReader(null))
                 //.processor()
                 .writer(studentCsvItemWriter)
                 .build();
     }
 
-    public FlatFileItemReader<StudentCsv> flatFileItemReader() {
+    // setting FlatFileItemReader to read file based on key-value pair passed from jobParameters
+    // @Value("#{jobParameters['keyName']}") FileSystemResource fileSystemResource
+    // need @Bean & @StepScope annotation for the FlatFileItemReader to read the filepath from prog argument
+    // need to be in context -> @Bean
+    // need to specify this reader is within the scope of the step
+    @Bean
+    @StepScope
+    public FlatFileItemReader<StudentCsv> flatFileItemReader(
+            @Value("#{jobParameters['inputFile']}") FileSystemResource fileSystemResource) {
         FlatFileItemReader<StudentCsv> flatFileItemReader =
                 new FlatFileItemReader<StudentCsv>();
 
         // set the file path to read from
-        flatFileItemReader.setResource(new FileSystemResource(
-                new File("inputfiles/student.csv")));
+        // can use ClassPathResource as well
+        flatFileItemReader.setResource(fileSystemResource);
 
         // initialize the lineMapper, lineTokenizer, fieldSetMapper
         DefaultLineMapper<StudentCsv> lineMapper = new DefaultLineMapper<>();
@@ -186,7 +197,12 @@ public class SampleJob {
         BeanWrapperFieldSetMapper<StudentCsv> fieldSetMapper = new BeanWrapperFieldSetMapper<>();
 
         // set the delimiter, names, target class
+        // can be comma -> , or pipe -> | or ... depending on the flat file separator used
         lineTokenizer.setDelimiter(",");
+        // setNames will change the order of the header being passed
+        // swopping lastname with email and check the println
+        // the column headers qty must match with the setnames strings qty that are passed in
+        // csv has 4 columns but setNames 3 strings -> raise FlatFileParseException
         lineTokenizer.setNames("ID", "First Name", "Last Name", "Email");
         fieldSetMapper.setTargetType(StudentCsv.class);
 
