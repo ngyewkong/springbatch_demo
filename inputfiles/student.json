@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "firstName": "John",
+    "last_name": "Smith",
+    "email": "john@gmail.com"
+  },
+  {
+    "id": 2,
+    "firstName": "Apple",
+    "last_name": "Seed",
+    "email": "appleseed@aapl.com"
+  },
+  {
+    "id": 3,
+    "firstName": "Elon",
+    "last_name": "Musk",
+    "email": "elonmusk@tsla.com"
+  },
+  {
+    "id": 4,
+    "firstName": "Bill",
+    "last_name": "Gates",
+    "email": "billgates@msft.com"
+  },
+  {
+    "id": 5,
+    "firstName": "Jeff",
+    "last_name": "Bezos",
+    "email": "jeffbezos@amzn.com"
+  },
+  {
+    "id": 6,
+    "firstName": "Sundar",
+    "last_name": "Pichai",
+    "email": "sundarpichai@google.com"
+  },
+  {
+    "id": 7,
+    "firstName": "Satya",
+    "last_name": "Nadella",
+    "email": "satya.nadella@msft.com"
+  },
+  {
+    "id": 8,
+    "firstName": "Tim",
+    "last_name": "Cook",
+    "email": "timcook@apple.com"
+  },
+  {
+    "id": 9,
+    "firstName": "Jack",
+    "last_name": "Ma",
+    "email": "jackma@alibaba.com"
+  },
+  {
+    "id": 10,
+    "firstName": "Warren",
+    "last_name": "Buffett",
+    "email": "warrenbuffett@bershirehathaway.com"
+  }
+]

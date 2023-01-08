@@ -3,11 +3,13 @@ package com.ngyewkong.springbatchdemo.config;
 import com.ngyewkong.springbatchdemo.listener.FirstJobListener;
 import com.ngyewkong.springbatchdemo.listener.FirstStepListener;
 import com.ngyewkong.springbatchdemo.model.StudentCsv;
+import com.ngyewkong.springbatchdemo.model.StudentJson;
 import com.ngyewkong.springbatchdemo.processor.FirstItemProcessor;
 import com.ngyewkong.springbatchdemo.reader.FirstItemReader;
 import com.ngyewkong.springbatchdemo.service.SecondTasklet;
 import com.ngyewkong.springbatchdemo.writer.FirstItemWriter;
 import com.ngyewkong.springbatchdemo.writer.StudentCsvItemWriter;
+import com.ngyewkong.springbatchdemo.writer.StudentJsonItemWriter;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
@@ -21,6 +23,8 @@ import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.batch.item.json.JacksonJsonObjectReader;
+import org.springframework.batch.item.json.JsonItemReader;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -157,6 +161,9 @@ public class SampleJob {
     @Autowired
     private StudentCsvItemWriter studentCsvItemWriter;
 
+    @Autowired
+    private StudentJsonItemWriter studentJsonItemWriter;
+
     @Bean
     public Job thirdJob() {
         return jobBuilderFactory.get("ItemReadersDemoJob")
@@ -167,11 +174,14 @@ public class SampleJob {
 
     public Step secondChunkStep() {
         return stepBuilderFactory.get("Item Readers Demo Step")
-                .<StudentCsv, StudentCsv>chunk(4)
-                // pass null as value will be read in from the jobParameters
-                .reader(flatFileItemReader(null))
+                //.<StudentCsv, StudentCsv>chunk(4)
+                //// pass null as value will be read in from the jobParameters
+                //.reader(flatFileItemReader(null))
+                .<StudentJson, StudentJson>chunk(4)
+                .reader(jsonItemReader(null))
+                .writer(studentJsonItemWriter)
                 //.processor()
-                .writer(studentCsvItemWriter)
+                //.writer(studentCsvItemWriter)
                 .build();
     }
 
@@ -183,7 +193,7 @@ public class SampleJob {
     @Bean
     @StepScope
     public FlatFileItemReader<StudentCsv> flatFileItemReader(
-            @Value("#{jobParameters['inputFile']}") FileSystemResource fileSystemResource) {
+            @Value("#{jobParameters['inputCsvFile']}") FileSystemResource fileSystemResource) {
         FlatFileItemReader<StudentCsv> flatFileItemReader =
                 new FlatFileItemReader<StudentCsv>();
 
@@ -200,8 +210,8 @@ public class SampleJob {
         // can be comma -> , or pipe -> | or ... depending on the flat file separator used
         lineTokenizer.setDelimiter(",");
         // setNames will change the order of the header being passed
-        // swopping lastname with email and check the println
-        // the column headers qty must match with the setnames strings qty that are passed in
+        // swapping lastname with email and check the println
+        // the column headers qty must match with the setNames strings qty that are passed in
         // csv has 4 columns but setNames 3 strings -> raise FlatFileParseException
         lineTokenizer.setNames("ID", "First Name", "Last Name", "Email");
         fieldSetMapper.setTargetType(StudentCsv.class);
@@ -216,6 +226,33 @@ public class SampleJob {
         flatFileItemReader.setLinesToSkip(1);
 
         return flatFileItemReader;
+    }
+
+    // Json Item Reader
+    // same annotation as flat file item reader for using file system resource
+    // Jackson lib to handle json
+    @Bean
+    @StepScope
+    public JsonItemReader<StudentJson> jsonItemReader(
+            @Value("#{jobParameters['inputJsonFile']}") FileSystemResource fileSystemResource) {
+        JsonItemReader<StudentJson> jsonItemReader = new JsonItemReader<>();
+        jsonItemReader.setResource(fileSystemResource);
+
+        // .setJsonObjectReader(new JacksonJsonObjectReader<>(model.class))
+        // to use jackson lib
+        jsonItemReader.setJsonObjectReader(
+                new JacksonJsonObjectReader<>(StudentJson.class)
+        );
+
+        // set the max item count to read
+        // .setMaxItemCount(number of items)
+        jsonItemReader.setMaxItemCount(7);
+
+        // set top items to skip
+        // .setCurrentItemCount(2) skip first 2 items start from 3
+        jsonItemReader.setCurrentItemCount(2);
+
+        return jsonItemReader;
     }
 
 }
