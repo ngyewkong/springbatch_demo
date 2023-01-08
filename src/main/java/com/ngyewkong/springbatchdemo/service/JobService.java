@@ -33,6 +33,10 @@ public class JobService {
     @Autowired
     private Job secondJob;
 
+    @Qualifier("thirdJob")
+    @Autowired
+    private Job thirdJob;
+
     // using @Async annotation here to make this startJob method async
     @Async
     public void startJob(String jobName, List<JobParamsRequest> jobParamsRequestList) {
@@ -65,6 +69,8 @@ public class JobService {
             } else if (jobName.equals("Second Job - Chunk")) {
                 // jobLauncher takes in 2 arguments - jobObject & jobParameters
                 jobExecution = jobLauncher.run(secondJob, jobParameters);
+            } else if (jobName.equals("ItemReadersDemoJob")) {
+                jobExecution = jobLauncher.run(thirdJob, jobParameters);
             }
             System.out.println("Job Execution ID = " + jobExecution.getJobId());
         } catch (Exception e) {
