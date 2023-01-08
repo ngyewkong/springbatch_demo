@@ -47,6 +47,7 @@ public class JobService {
         params.put("currentTime", new JobParameter(System.currentTimeMillis()));
         params.put("inputCsvFile", new JobParameter("inputfiles/student.csv"));
         params.put("inputJsonFile", new JobParameter("inputfiles/student.json"));
+        params.put("inputXmlFile", new JobParameter("inputfiles/student.xml"));
 
         // use the jobParamsList that is passed in
         // add it into the params HashMap which store as key-value pairs
