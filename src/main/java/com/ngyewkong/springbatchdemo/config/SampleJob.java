@@ -2,10 +2,12 @@ package com.ngyewkong.springbatchdemo.config;
 
 import com.ngyewkong.springbatchdemo.listener.FirstJobListener;
 import com.ngyewkong.springbatchdemo.listener.FirstStepListener;
+import com.ngyewkong.springbatchdemo.model.StudentCsv;
 import com.ngyewkong.springbatchdemo.processor.FirstItemProcessor;
 import com.ngyewkong.springbatchdemo.reader.FirstItemReader;
 import com.ngyewkong.springbatchdemo.service.SecondTasklet;
 import com.ngyewkong.springbatchdemo.writer.FirstItemWriter;
+import com.ngyewkong.springbatchdemo.writer.StudentCsvItemWriter;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
@@ -14,10 +16,17 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
+import org.springframework.batch.item.file.mapping.DefaultLineMapper;
+import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.FileSystemResource;
+
+import java.io.File;
 
 // important to use configuration annotation
 @Configuration
@@ -133,11 +142,64 @@ public class SampleJob {
     // itemReader & itemWriter are mandatory for chunk-oriented step
     public Step firstChunkStep() {
         return stepBuilderFactory.get("First Chunk Step")
-                .<Integer, Long>chunk(4)
+                .<Integer, Long>chunk(3)
                 .reader(firstItemReader)
                 .processor(firstItemProcessor)
                 .writer(firstItemWriter)
                 .build();
+    }
+
+    // set up third job for item readers section
+    // autowired the custom csv item reader & writer
+    // add the thirdJob to the JobService to use jobLauncher to run
+    @Autowired
+    private StudentCsvItemWriter studentCsvItemWriter;
+
+    @Bean
+    public Job thirdJob() {
+        return jobBuilderFactory.get("ItemReadersDemoJob")
+                .incrementer(new RunIdIncrementer())
+                .start(secondChunkStep())
+                .build();
+    }
+
+    public Step secondChunkStep() {
+        return stepBuilderFactory.get("Item Readers Demo Step")
+                .<StudentCsv, StudentCsv>chunk(4)
+                .reader(flatFileItemReader())
+                //.processor()
+                .writer(studentCsvItemWriter)
+                .build();
+    }
+
+    public FlatFileItemReader<StudentCsv> flatFileItemReader() {
+        FlatFileItemReader<StudentCsv> flatFileItemReader =
+                new FlatFileItemReader<StudentCsv>();
+
+        // set the file path to read from
+        flatFileItemReader.setResource(new FileSystemResource(
+                new File("inputfiles/student.csv")));
+
+        // initialize the lineMapper, lineTokenizer, fieldSetMapper
+        DefaultLineMapper<StudentCsv> lineMapper = new DefaultLineMapper<>();
+        DelimitedLineTokenizer lineTokenizer = new DelimitedLineTokenizer();
+        BeanWrapperFieldSetMapper<StudentCsv> fieldSetMapper = new BeanWrapperFieldSetMapper<>();
+
+        // set the delimiter, names, target class
+        lineTokenizer.setDelimiter(",");
+        lineTokenizer.setNames("ID", "First Name", "Last Name", "Email");
+        fieldSetMapper.setTargetType(StudentCsv.class);
+
+        // set it onto the initalized lineMapper
+        lineMapper.setLineTokenizer(lineTokenizer);
+        lineMapper.setFieldSetMapper(fieldSetMapper);
+
+        flatFileItemReader.setLineMapper(lineMapper);
+
+        // skip the column header in csv file which is the first line
+        flatFileItemReader.setLinesToSkip(1);
+
+        return flatFileItemReader;
     }
 
 }
