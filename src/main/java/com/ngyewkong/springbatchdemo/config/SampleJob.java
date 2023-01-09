@@ -3,15 +3,13 @@ package com.ngyewkong.springbatchdemo.config;
 import com.ngyewkong.springbatchdemo.listener.FirstJobListener;
 import com.ngyewkong.springbatchdemo.listener.FirstStepListener;
 import com.ngyewkong.springbatchdemo.model.StudentCsv;
+import com.ngyewkong.springbatchdemo.model.StudentJdbc;
 import com.ngyewkong.springbatchdemo.model.StudentJson;
 import com.ngyewkong.springbatchdemo.model.StudentXml;
 import com.ngyewkong.springbatchdemo.processor.FirstItemProcessor;
 import com.ngyewkong.springbatchdemo.reader.FirstItemReader;
 import com.ngyewkong.springbatchdemo.service.SecondTasklet;
-import com.ngyewkong.springbatchdemo.writer.FirstItemWriter;
-import com.ngyewkong.springbatchdemo.writer.StudentCsvItemWriter;
-import com.ngyewkong.springbatchdemo.writer.StudentJsonItemWriter;
-import com.ngyewkong.springbatchdemo.writer.StudentXmlItemWriter;
+import com.ngyewkong.springbatchdemo.writer.*;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
@@ -21,6 +19,7 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
@@ -34,8 +33,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 
+import javax.sql.DataSource;
 import java.io.File;
 
 // important to use configuration annotation
@@ -171,6 +172,9 @@ public class SampleJob {
     @Autowired
     private StudentXmlItemWriter studentXmlItemWriter;
 
+    @Autowired
+    private StudentJdbcItemWriter studentJdbcItemWriter;
+
     @Bean
     public Job thirdJob() {
         return jobBuilderFactory.get("ItemReadersDemoJob")
@@ -187,9 +191,12 @@ public class SampleJob {
                 //.<StudentJson, StudentJson>chunk(4)
                 //.reader(jsonItemReader(null))
                 //.writer(studentJsonItemWriter)
-                .<StudentXml, StudentXml>chunk(4)
-                .reader(staxEventItemReader(null))
-                .writer(studentXmlItemWriter)
+                //.<StudentXml, StudentXml>chunk(4)
+                //.reader(staxEventItemReader(null))
+                //.writer(studentXmlItemWriter)
+                .<StudentJdbc, StudentJdbc>chunk(4)
+                .reader(jdbcCursorItemReader())
+                .writer(studentJdbcItemWriter)
                 //.processor()
                 //.writer(studentCsvItemWriter)
                 .build();
@@ -285,6 +292,36 @@ public class SampleJob {
         staxEventItemReader.setUnmarshaller(jaxb2Marshaller);
 
         return staxEventItemReader;
+    }
+
+    // autowired the datasource from application.properties
+    // for one datasource it will take the spring.datasource properties by default
+    @Autowired
+    private DataSource dataSource;
+
+    // Jdbc Item Reader
+    public JdbcCursorItemReader<StudentJdbc> jdbcCursorItemReader() {
+        JdbcCursorItemReader<StudentJdbc> jdbcCursorItemReader = new JdbcCursorItemReader<>();
+        jdbcCursorItemReader.setDataSource(dataSource);
+        // set the sql query
+        // must use aliases to match db col name with model variable name
+        // if sql statement do not match the model class -> missing fields will be in null
+        jdbcCursorItemReader.setSql(
+                //"SELECT firstName, last_Name, email FROM student"
+                "SELECT id, firstName, last_name AS lastName, email FROM student"
+        );
+
+        // using beanPropertyRowMapper to set the row mapper using model class
+        BeanPropertyRowMapper<StudentJdbc> beanPropertyRowMapper = new BeanPropertyRowMapper<>();
+        beanPropertyRowMapper.setMappedClass(StudentJdbc.class);
+        jdbcCursorItemReader.setRowMapper(beanPropertyRowMapper);
+
+        // skip top n rows
+        jdbcCursorItemReader.setCurrentItemCount(2); // start from 3
+        // read max rows
+        jdbcCursorItemReader.setMaxItemCount(7); // read until 7th row
+
+        return jdbcCursorItemReader;
     }
 
 }
