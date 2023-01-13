@@ -29,6 +29,7 @@ import org.springframework.batch.item.json.JsonItemReader;
 import org.springframework.batch.item.xml.StaxEventItemReader;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,7 +38,6 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 
 import javax.sql.DataSource;
-import java.io.File;
 
 // important to use configuration annotation
 @Configuration
@@ -296,13 +296,19 @@ public class SampleJob {
 
     // autowired the datasource from application.properties
     // for one datasource it will take the spring.datasource properties by default
+    // use @Qualifier with ref to the @Bean("name") to autowired correctly
     @Autowired
-    private DataSource dataSource;
+    @Qualifier("batchMetaDataSource")
+    DataSource batchMetaDataSource;
+
+    @Autowired
+    @Qualifier("dataTableDataSource")
+    DataSource actualDataSource;
 
     // Jdbc Item Reader
     public JdbcCursorItemReader<StudentJdbc> jdbcCursorItemReader() {
         JdbcCursorItemReader<StudentJdbc> jdbcCursorItemReader = new JdbcCursorItemReader<>();
-        jdbcCursorItemReader.setDataSource(dataSource);
+        jdbcCursorItemReader.setDataSource(actualDataSource);
         // set the sql query
         // must use aliases to match db col name with model variable name
         // if sql statement do not match the model class -> missing fields will be in null
