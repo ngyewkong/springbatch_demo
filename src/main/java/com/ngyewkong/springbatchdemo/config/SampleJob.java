@@ -2,13 +2,12 @@ package com.ngyewkong.springbatchdemo.config;
 
 import com.ngyewkong.springbatchdemo.listener.FirstJobListener;
 import com.ngyewkong.springbatchdemo.listener.FirstStepListener;
-import com.ngyewkong.springbatchdemo.model.StudentCsv;
-import com.ngyewkong.springbatchdemo.model.StudentJdbc;
-import com.ngyewkong.springbatchdemo.model.StudentJson;
-import com.ngyewkong.springbatchdemo.model.StudentXml;
+import com.ngyewkong.springbatchdemo.model.*;
 import com.ngyewkong.springbatchdemo.processor.FirstItemProcessor;
 import com.ngyewkong.springbatchdemo.reader.FirstItemReader;
+import com.ngyewkong.springbatchdemo.service.JobService;
 import com.ngyewkong.springbatchdemo.service.SecondTasklet;
+import com.ngyewkong.springbatchdemo.service.StudentService;
 import com.ngyewkong.springbatchdemo.writer.*;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -19,6 +18,7 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.item.adapter.ItemReaderAdapter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
@@ -175,6 +175,9 @@ public class SampleJob {
     @Autowired
     private StudentJdbcItemWriter studentJdbcItemWriter;
 
+    @Autowired
+    private StudentResponseItemWriter studentResponseItemWriter;
+
     @Bean
     public Job thirdJob() {
         return jobBuilderFactory.get("ItemReadersDemoJob")
@@ -194,9 +197,12 @@ public class SampleJob {
                 //.<StudentXml, StudentXml>chunk(4)
                 //.reader(staxEventItemReader(null))
                 //.writer(studentXmlItemWriter)
-                .<StudentJdbc, StudentJdbc>chunk(4)
-                .reader(jdbcCursorItemReader())
-                .writer(studentJdbcItemWriter)
+                //.<StudentJdbc, StudentJdbc>chunk(4)
+                //.reader(jdbcCursorItemReader())
+                //.writer(studentJdbcItemWriter)
+                .<StudentResponse, StudentResponse>chunk(4)
+                .reader(itemReaderAdapter())
+                .writer(studentResponseItemWriter)
                 //.processor()
                 //.writer(studentCsvItemWriter)
                 .build();
@@ -328,6 +334,31 @@ public class SampleJob {
         jdbcCursorItemReader.setMaxItemCount(7); // read until 7th row
 
         return jdbcCursorItemReader;
+    }
+
+    // autowired StudentService
+    @Autowired
+    private StudentService studentService;
+
+    // rest api datasource item reader adapter
+    public ItemReaderAdapter<StudentResponse> itemReaderAdapter() {
+        ItemReaderAdapter<StudentResponse> itemReaderAdapter = new ItemReaderAdapter<>();
+
+        // invoke the method in JobService -> restCallGetStudents()
+        // via .setTargetObject(service.class)
+        // via .setTargetMethod()
+        // but cannot directly use the method defined in StudentService
+        // no logic to manage the reading of records by row
+        // no logic to manage return null when end of source
+        itemReaderAdapter.setTargetObject(studentService);
+        // this will get the getStudent() method from studentService
+        itemReaderAdapter.setTargetMethod("getStudent");
+        // add arguments
+        itemReaderAdapter.setArguments(new Object[] {
+                1L, "Add Arguments"
+        });
+
+        return itemReaderAdapter;
     }
 
 }
