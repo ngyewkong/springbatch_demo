@@ -5,7 +5,6 @@ import com.ngyewkong.springbatchdemo.listener.FirstStepListener;
 import com.ngyewkong.springbatchdemo.model.*;
 import com.ngyewkong.springbatchdemo.processor.FirstItemProcessor;
 import com.ngyewkong.springbatchdemo.reader.FirstItemReader;
-import com.ngyewkong.springbatchdemo.service.JobService;
 import com.ngyewkong.springbatchdemo.service.SecondTasklet;
 import com.ngyewkong.springbatchdemo.service.StudentService;
 import com.ngyewkong.springbatchdemo.writer.*;
@@ -18,11 +17,17 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.adapter.ItemReaderAdapter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
+import org.springframework.batch.item.file.FlatFileFooterCallback;
+import org.springframework.batch.item.file.FlatFileHeaderCallback;
 import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.FlatFileItemWriter;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
+import org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor;
+import org.springframework.batch.item.file.transform.DelimitedLineAggregator;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.batch.item.json.JacksonJsonObjectReader;
 import org.springframework.batch.item.json.JsonItemReader;
@@ -38,6 +43,9 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 
 import javax.sql.DataSource;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.Date;
 
 // important to use configuration annotation
 @Configuration
@@ -189,22 +197,24 @@ public class SampleJob {
     public Step secondChunkStep() {
         return stepBuilderFactory.get("Item Readers Demo Step")
                 //.<StudentCsv, StudentCsv>chunk(4)
-                //// pass null as value will be read in from the jobParameters
-                //.reader(flatFileItemReader(null))
                 //.<StudentJson, StudentJson>chunk(4)
-                //.reader(jsonItemReader(null))
-                //.writer(studentJsonItemWriter)
                 //.<StudentXml, StudentXml>chunk(4)
+                .<StudentJdbc, StudentJdbc>chunk(4)
+                //.<StudentResponse, StudentResponse>chunk(4)
+                // pass null as value will be read in from the jobParameters
+                //.reader(flatFileItemReader(null))
+                //.reader(jsonItemReader(null))
                 //.reader(staxEventItemReader(null))
-                //.writer(studentXmlItemWriter)
-                //.<StudentJdbc, StudentJdbc>chunk(4)
-                //.reader(jdbcCursorItemReader())
-                //.writer(studentJdbcItemWriter)
-                .<StudentResponse, StudentResponse>chunk(4)
-                .reader(itemReaderAdapter())
-                .writer(studentResponseItemWriter)
+                // using the jdbc reader to get from db for itemwriter egs
+                .reader(jdbcCursorItemReader())
+                //.reader(itemReaderAdapter())
                 //.processor()
-                //.writer(studentCsvItemWriter)
+                .writer(flatFileItemWriter(null))
+                //.writer(studentCsvItemWriter())
+                //.writer(studentJsonItemWriter)
+                //.writer(studentXmlItemWriter)
+                //.writer(studentJdbcItemWriter)
+                //.writer(studentResponseItemWriter)
                 .build();
     }
 
@@ -239,7 +249,7 @@ public class SampleJob {
         lineTokenizer.setNames("ID", "First Name", "Last Name", "Email");
         fieldSetMapper.setTargetType(StudentCsv.class);
 
-        // set it onto the initalized lineMapper
+        // set it onto the initialized lineMapper
         lineMapper.setLineTokenizer(lineTokenizer);
         lineMapper.setFieldSetMapper(fieldSetMapper);
 
@@ -249,6 +259,46 @@ public class SampleJob {
         flatFileItemReader.setLinesToSkip(1);
 
         return flatFileItemReader;
+    }
+
+    // Csv Item Writer
+    @Bean
+    @StepScope
+    public FlatFileItemWriter<StudentJdbc> flatFileItemWriter(
+            @Value("#{jobParameters['outputCsvFile']}") FileSystemResource fileSystemResource
+    ) {
+        FlatFileItemWriter<StudentJdbc> flatFileItemWriter = new FlatFileItemWriter<>();
+        flatFileItemWriter.setResource(fileSystemResource);
+        // set the csv header columns
+        flatFileItemWriter.setHeaderCallback(new FlatFileHeaderCallback() {
+            @Override
+            public void writeHeader(Writer writer) throws IOException {
+                writer.write("Id,First Name,Last Name,Email");
+            }
+        });
+
+        // set the line aggregator for each record
+        DelimitedLineAggregator<StudentJdbc> delimitedLineAggregator = new DelimitedLineAggregator<>();
+        BeanWrapperFieldExtractor<StudentJdbc> beanWrapperFieldExtractor = new BeanWrapperFieldExtractor<>();
+        // setNames to use String Array that matches the model class variables name
+        beanWrapperFieldExtractor.setNames(new String[] {
+                "id", "firstName", "lastName", "email"
+        });
+
+        // set the field extractor for delimited line aggregator
+        delimitedLineAggregator.setDelimiter("|");
+        delimitedLineAggregator.setFieldExtractor(beanWrapperFieldExtractor);
+        flatFileItemWriter.setLineAggregator(delimitedLineAggregator);
+
+        // set the footer or the last line of the csv writer
+        flatFileItemWriter.setFooterCallback(new FlatFileFooterCallback() {
+            @Override
+            public void writeFooter(Writer writer) throws IOException {
+                writer.write("Created at " + new Date());
+            }
+        });
+
+        return flatFileItemWriter;
     }
 
     // Json Item Reader

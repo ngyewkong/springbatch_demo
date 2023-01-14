@@ -27,7 +27,7 @@ public class JobController {
     // @RequestBody will pass the json body into the List<JobParamsRequest>
     @GetMapping("/start/{jobName}")
     public String startJob(@PathVariable String jobName,
-                           @RequestBody List<JobParamsRequest> jobParamsList) throws JobInstanceAlreadyCompleteException, JobExecutionAlreadyRunningException, JobParametersInvalidException, JobRestartException {
+                           @RequestBody(required = false) List<JobParamsRequest> jobParamsList) throws JobInstanceAlreadyCompleteException, JobExecutionAlreadyRunningException, JobParametersInvalidException, JobRestartException {
 
         // call the JobService instance and the startJob() method
         // takes in the jobParamsList that is passed in from @RequestBody annotation

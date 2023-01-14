@@ -45,21 +45,25 @@ public class JobService {
         // setting params with current time in millisec -> jobInstance will be unique every single time
         Map<String, JobParameter> params = new HashMap<>();
         params.put("currentTime", new JobParameter(System.currentTimeMillis()));
-        //params.put("inputCsvFile", new JobParameter("inputfiles/student.csv"));
+        // this will read the respective file from the filepath given in JobParameter value
+        //params.put("inputCsvFile", new JobParameter("/Users/ngyewkong/IdeaProjects/springbatch-demo/inputfiles/student.csv"));
+        params.put("outputCsvFile", new JobParameter("/Users/ngyewkong/IdeaProjects/springbatch-demo/outputfiles/students.csv"));
         //params.put("inputJsonFile", new JobParameter("inputfiles/student.json"));
         //params.put("inputXmlFile", new JobParameter("inputfiles/student.xml"));
-        //params.put("jdbcFromDB", new JobParameter("jdbcDataFromMySQLDB"));
-        params.put("restapidata", new JobParameter("dataFromRestApi"));
+        params.put("jdbcFromDB", new JobParameter("jdbcDataFromMySQLDB"));
+        //params.put("restapidata", new JobParameter("dataFromRestApi"));
 
         // use the jobParamsList that is passed in
         // add it into the params HashMap which store as key-value pairs
         // rmb jobParamsRequest.getParamValue returns a String but params has type JobParameter
         // initialize new JobParameter to recast to JobParameter type
-        jobParamsRequestList.stream()
-                .forEach(jobParamsRequest -> {
-                    params.put(jobParamsRequest.getParamKey(),
-                            new JobParameter(jobParamsRequest.getParamValue()));
-                });
+        if (jobParamsRequestList != null) {
+            jobParamsRequestList.stream()
+                    .forEach(jobParamsRequest -> {
+                        params.put(jobParamsRequest.getParamKey(),
+                                new JobParameter(jobParamsRequest.getParamValue()));
+                    });
+        }
 
         // JobParameters take in a HashMap of keyvalue pair
         JobParameters jobParameters = new JobParameters(params);
@@ -77,7 +81,7 @@ public class JobService {
             } else if (jobName.equals("ItemReadersDemoJob")) {
                 jobExecution = jobLauncher.run(thirdJob, jobParameters);
             }
-            System.out.println("Job Execution ID = " + jobExecution.getJobId());
+            System.out.println("Job Instance ID = " + jobExecution.getJobId());
         } catch (Exception e) {
             System.out.println("Exception while starting Job");
         }
