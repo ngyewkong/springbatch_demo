@@ -47,8 +47,9 @@ public class JobService {
         params.put("currentTime", new JobParameter(System.currentTimeMillis()));
         // this will read the respective file from the filepath given in JobParameter value
         //params.put("inputCsvFile", new JobParameter("/Users/ngyewkong/IdeaProjects/springbatch-demo/inputfiles/student.csv"));
-        params.put("outputCsvFile", new JobParameter("/Users/ngyewkong/IdeaProjects/springbatch-demo/outputfiles/students.csv"));
+        //params.put("outputCsvFile", new JobParameter("/Users/ngyewkong/IdeaProjects/springbatch-demo/outputfiles/students.csv"));
         //params.put("inputJsonFile", new JobParameter("inputfiles/student.json"));
+        params.put("outputJsonFile", new JobParameter("/Users/ngyewkong/IdeaProjects/springbatch-demo/outputfiles/students.json"));
         //params.put("inputXmlFile", new JobParameter("inputfiles/student.xml"));
         params.put("jdbcFromDB", new JobParameter("jdbcDataFromMySQLDB"));
         //params.put("restapidata", new JobParameter("dataFromRestApi"));
