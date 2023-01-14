@@ -4,6 +4,7 @@ import com.ngyewkong.springbatchdemo.listener.FirstJobListener;
 import com.ngyewkong.springbatchdemo.listener.FirstStepListener;
 import com.ngyewkong.springbatchdemo.model.*;
 import com.ngyewkong.springbatchdemo.processor.FirstItemProcessor;
+import com.ngyewkong.springbatchdemo.processor.JdbcToJsonItemProcessor;
 import com.ngyewkong.springbatchdemo.reader.FirstItemReader;
 import com.ngyewkong.springbatchdemo.service.SecondTasklet;
 import com.ngyewkong.springbatchdemo.service.StudentService;
@@ -29,7 +30,9 @@ import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor;
 import org.springframework.batch.item.file.transform.DelimitedLineAggregator;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.batch.item.json.JacksonJsonObjectMarshaller;
 import org.springframework.batch.item.json.JacksonJsonObjectReader;
+import org.springframework.batch.item.json.JsonFileItemWriter;
 import org.springframework.batch.item.json.JsonItemReader;
 import org.springframework.batch.item.xml.StaxEventItemReader;
 import org.springframework.batch.repeat.RepeatStatus;
@@ -199,8 +202,9 @@ public class SampleJob {
                 //.<StudentCsv, StudentCsv>chunk(4)
                 //.<StudentJson, StudentJson>chunk(4)
                 //.<StudentXml, StudentXml>chunk(4)
-                .<StudentJdbc, StudentJdbc>chunk(4)
+                //.<StudentJdbc, StudentJdbc>chunk(4)
                 //.<StudentResponse, StudentResponse>chunk(4)
+                .<StudentJdbc, StudentJson>chunk(4)
                 // pass null as value will be read in from the jobParameters
                 //.reader(flatFileItemReader(null))
                 //.reader(jsonItemReader(null))
@@ -208,8 +212,9 @@ public class SampleJob {
                 // using the jdbc reader to get from db for itemwriter egs
                 .reader(jdbcCursorItemReader())
                 //.reader(itemReaderAdapter())
-                //.processor()
-                .writer(flatFileItemWriter(null))
+                .processor(jdbcToJsonItemProcessor)
+                //.writer(flatFileItemWriter(null))
+                .writer(jsonFileItemWriter(null))
                 //.writer(studentCsvItemWriter())
                 //.writer(studentJsonItemWriter)
                 //.writer(studentXmlItemWriter)
@@ -326,6 +331,25 @@ public class SampleJob {
         jsonItemReader.setCurrentItemCount(2);
 
         return jsonItemReader;
+    }
+
+    // Jdbc to Json Item Processor
+    @Autowired
+    private JdbcToJsonItemProcessor jdbcToJsonItemProcessor;
+
+    // Json Item Writer
+    @Bean
+    @StepScope
+    public JsonFileItemWriter<StudentJson> jsonFileItemWriter(
+            @Value("#{jobParameters['outputJsonFile']}") FileSystemResource fileSystemResource
+    ) {
+        // constructor takes in 2 arguments - resource and JsonObjectMarshaller
+        // using JacksonJsonObjectMarshaller to map jdbc data to json object
+        JsonFileItemWriter<StudentJson> jsonFileItemWriter =
+                new JsonFileItemWriter<>(fileSystemResource,
+                        new JacksonJsonObjectMarshaller<>());
+
+        return jsonFileItemWriter;
     }
 
     // Xml Item Reader
