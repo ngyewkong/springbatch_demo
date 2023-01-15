@@ -1,5 +1,6 @@
 package com.ngyewkong.springbatchdemo.service;
 
+import com.ngyewkong.springbatchdemo.model.StudentCsv;
 import com.ngyewkong.springbatchdemo.model.StudentResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -45,5 +46,17 @@ public class StudentService {
         }
         // return null when end of source
         return null;
+    }
+
+    // Rest Call to Create Student
+    // take in input from item reader
+    public StudentResponse restCallCreateStudent(StudentCsv studentCsv) {
+        RestTemplate restTemplate = new RestTemplate();
+
+        // postForObject(url, requestPayload, response.class)
+        // requestPayload is from studentCsv
+        return restTemplate.postForObject("http://localhost:8081/api/v1/createStudent",
+                studentCsv,
+                StudentResponse.class);
     }
 }

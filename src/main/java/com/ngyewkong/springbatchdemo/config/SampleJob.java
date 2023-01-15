@@ -22,6 +22,7 @@ import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.adapter.ItemReaderAdapter;
+import org.springframework.batch.item.adapter.ItemWriterAdapter;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
 import org.springframework.batch.item.database.ItemPreparedStatementSetter;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
@@ -207,14 +208,14 @@ public class SampleJob {
 
     public Step secondChunkStep() {
         return stepBuilderFactory.get("Item Readers Demo Step")
-                //.<StudentCsv, StudentCsv>chunk(4)
+                .<StudentCsv, StudentCsv>chunk(4)
                 //.<StudentJson, StudentJson>chunk(4)
                 //.<StudentXml, StudentXml>chunk(4)
                 //.<StudentJdbc, StudentJdbc>chunk(4)
                 //.<StudentResponse, StudentResponse>chunk(4)
                 //.<StudentJdbc, StudentJson>chunk(4)
                 //.<StudentJdbc, StudentXml>chunk(4)
-                .<StudentCsv, StudentJdbc>chunk(4)
+                //.<StudentCsv, StudentJdbc>chunk(4)
                 // pass null as value will be read in from the jobParameters
                 .reader(flatFileItemReader(null))
                 //.reader(jsonItemReader(null))
@@ -224,11 +225,12 @@ public class SampleJob {
                 //.reader(itemReaderAdapter())
                 //.processor(jdbcToJsonItemProcessor)
                 //.processor(jdbcToXmlItemProcessor)
-                .processor(csvToJdbcItemProcessor)
+                //.processor(csvToJdbcItemProcessor)
                 //.writer(flatFileItemWriter(null))
                 //.writer(jsonFileItemWriter(null))
                 //.writer(staxEventItemWriter(null))
-                .writer(jdbcBatchItemWriter())
+                //.writer(jdbcBatchItemWriter())
+                .writer(itemWriterAdapter())
                 //.writer(studentCsvItemWriter())
                 //.writer(studentJsonItemWriter)
                 //.writer(studentXmlItemWriter)
@@ -517,6 +519,20 @@ public class SampleJob {
         });
 
         return itemReaderAdapter;
+    }
+
+    // rest api item writer
+    public ItemWriterAdapter<StudentCsv> itemWriterAdapter() {
+        ItemWriterAdapter<StudentCsv> itemWriterAdapter = new ItemWriterAdapter<>();
+
+        // set the service in TargetObject
+        // set the method in Student Service
+        // do not need SetArguments unlike ItemReaderAdapter as we are getting from the item reader
+        // in this case csv item reader
+        itemWriterAdapter.setTargetObject(studentService);
+        itemWriterAdapter.setTargetMethod("restCallCreateStudent");
+
+        return itemWriterAdapter;
     }
 
 }
