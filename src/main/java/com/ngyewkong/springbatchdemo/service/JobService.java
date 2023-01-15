@@ -49,8 +49,9 @@ public class JobService {
         //params.put("inputCsvFile", new JobParameter("/Users/ngyewkong/IdeaProjects/springbatch-demo/inputfiles/student.csv"));
         //params.put("outputCsvFile", new JobParameter("/Users/ngyewkong/IdeaProjects/springbatch-demo/outputfiles/students.csv"));
         //params.put("inputJsonFile", new JobParameter("inputfiles/student.json"));
-        params.put("outputJsonFile", new JobParameter("/Users/ngyewkong/IdeaProjects/springbatch-demo/outputfiles/students.json"));
+        //params.put("outputJsonFile", new JobParameter("/Users/ngyewkong/IdeaProjects/springbatch-demo/outputfiles/students.json"));
         //params.put("inputXmlFile", new JobParameter("inputfiles/student.xml"));
+        params.put("outputXmlFile", new JobParameter("/Users/ngyewkong/IdeaProjects/springbatch-demo/outputfiles/students.xml"));
         params.put("jdbcFromDB", new JobParameter("jdbcDataFromMySQLDB"));
         //params.put("restapidata", new JobParameter("dataFromRestApi"));
 
