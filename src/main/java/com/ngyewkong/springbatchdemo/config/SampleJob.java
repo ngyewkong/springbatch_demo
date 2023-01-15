@@ -3,6 +3,7 @@ package com.ngyewkong.springbatchdemo.config;
 import com.ngyewkong.springbatchdemo.listener.FirstJobListener;
 import com.ngyewkong.springbatchdemo.listener.FirstStepListener;
 import com.ngyewkong.springbatchdemo.model.*;
+import com.ngyewkong.springbatchdemo.processor.CsvToJdbcItemProcessor;
 import com.ngyewkong.springbatchdemo.processor.FirstItemProcessor;
 import com.ngyewkong.springbatchdemo.processor.JdbcToJsonItemProcessor;
 import com.ngyewkong.springbatchdemo.processor.JdbcToXmlItemProcessor;
@@ -21,6 +22,9 @@ import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.adapter.ItemReaderAdapter;
+import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
+import org.springframework.batch.item.database.ItemPreparedStatementSetter;
+import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.file.FlatFileFooterCallback;
 import org.springframework.batch.item.file.FlatFileHeaderCallback;
@@ -50,6 +54,8 @@ import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.Writer;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Date;
 
 // important to use configuration annotation
@@ -207,19 +213,22 @@ public class SampleJob {
                 //.<StudentJdbc, StudentJdbc>chunk(4)
                 //.<StudentResponse, StudentResponse>chunk(4)
                 //.<StudentJdbc, StudentJson>chunk(4)
-                .<StudentJdbc, StudentXml>chunk(4)
+                //.<StudentJdbc, StudentXml>chunk(4)
+                .<StudentCsv, StudentJdbc>chunk(4)
                 // pass null as value will be read in from the jobParameters
-                //.reader(flatFileItemReader(null))
+                .reader(flatFileItemReader(null))
                 //.reader(jsonItemReader(null))
                 //.reader(staxEventItemReader(null))
                 // using the jdbc reader to get from db for itemwriter egs
-                .reader(jdbcCursorItemReader())
+                //.reader(jdbcCursorItemReader())
                 //.reader(itemReaderAdapter())
                 //.processor(jdbcToJsonItemProcessor)
-                .processor(jdbcToXmlItemProcessor)
+                //.processor(jdbcToXmlItemProcessor)
+                .processor(csvToJdbcItemProcessor)
                 //.writer(flatFileItemWriter(null))
                 //.writer(jsonFileItemWriter(null))
-                .writer(staxEventItemWriter(null))
+                //.writer(staxEventItemWriter(null))
+                .writer(jdbcBatchItemWriter())
                 //.writer(studentCsvItemWriter())
                 //.writer(studentJsonItemWriter)
                 //.writer(studentXmlItemWriter)
@@ -439,6 +448,50 @@ public class SampleJob {
         jdbcCursorItemReader.setMaxItemCount(7); // read until 7th row
 
         return jdbcCursorItemReader;
+    }
+
+    // Csv to Jdbc Item Processor
+    @Autowired
+    private CsvToJdbcItemProcessor csvToJdbcItemProcessor;
+
+    // Jdbc Item Writer
+    @Bean
+    public JdbcBatchItemWriter<StudentJdbc> jdbcBatchItemWriter() {
+        JdbcBatchItemWriter<StudentJdbc> jdbcBatchItemWriter = new JdbcBatchItemWriter<>();
+
+        // set the datasource to write to -> actualDataSource
+        jdbcBatchItemWriter.setDataSource(actualDataSource);
+        // set the SQL statement to insert the data into datasource
+        // INSERT INTO table_name(table_col1, table_col2, ...)
+        // VALUES (:id, ...) -> follows the model class attributes
+//        jdbcBatchItemWriter.setSql(
+//                "INSERT INTO student(id, firstName, last_name, email)" +
+//                        "VALUES (:id, :firstName, :lastName, :email)"
+//        );
+//
+//        // set the SQL Statement to follow StudentJdbc class
+//        jdbcBatchItemWriter.setItemSqlParameterSourceProvider(
+//                new BeanPropertyItemSqlParameterSourceProvider<StudentJdbc>()
+//        );
+
+        // 2nd method to load sql statement via Prepared Statement
+        jdbcBatchItemWriter.setSql(
+                "INSERT INTO student(id, firstName, last_name, email)" +
+                        "VALUES (?,?,?,?)"
+        );
+
+        // setItemPreparedStatementSetter()
+        // setValues(ps.setLong(col_index)) -> col_index starts from 1
+        jdbcBatchItemWriter.setItemPreparedStatementSetter(
+                (studentJdbc, preparedStatement) -> {
+                    preparedStatement.setLong(1, studentJdbc.getId());
+                    preparedStatement.setString(2, studentJdbc.getFirstName());
+                    preparedStatement.setString(3, studentJdbc.getLastName());
+                    preparedStatement.setString(4, studentJdbc.getEmail());
+                }
+        );
+
+        return jdbcBatchItemWriter;
     }
 
     // autowired StudentService
