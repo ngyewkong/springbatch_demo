@@ -54,6 +54,7 @@ import java.io.Writer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.List;
 
 // important to use configuration annotation
 @Configuration
@@ -380,7 +381,18 @@ public class SampleJob {
         // using JacksonJsonObjectMarshaller to map jdbc data to json object
         JsonFileItemWriter<StudentJson> jsonFileItemWriter =
                 new JsonFileItemWriter<>(fileSystemResource,
-                        new JacksonJsonObjectMarshaller<>());
+                        new JacksonJsonObjectMarshaller<>()) {
+                    // simulate exception during write
+                    @Override
+                    public String doWrite(List<? extends StudentJson> items) {
+                        items.stream().forEach(item -> {
+                            if (item.getId() == 3) {
+                                throw new NullPointerException();
+                            }
+                        });
+                        return super.doWrite(items);
+                    }
+                };
 
         return jsonFileItemWriter;
     }
