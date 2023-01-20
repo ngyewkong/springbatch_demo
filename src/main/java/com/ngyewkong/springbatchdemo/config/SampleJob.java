@@ -3,6 +3,7 @@ package com.ngyewkong.springbatchdemo.config;
 import com.ngyewkong.springbatchdemo.listener.FirstJobListener;
 import com.ngyewkong.springbatchdemo.listener.FirstStepListener;
 import com.ngyewkong.springbatchdemo.listener.SkipListener;
+import com.ngyewkong.springbatchdemo.listener.SkipListenerImpl;
 import com.ngyewkong.springbatchdemo.model.*;
 import com.ngyewkong.springbatchdemo.processor.*;
 import com.ngyewkong.springbatchdemo.reader.FirstItemReader;
@@ -202,6 +203,9 @@ public class SampleJob {
     @Autowired
     private SkipListener skipListener;
 
+    @Autowired
+    private SkipListenerImpl skipListenerImpl;
+
     @Bean
     public Job thirdJob() {
         return jobBuilderFactory.get("ItemReadersDemoJob")
@@ -253,7 +257,8 @@ public class SampleJob {
                 .skip(Throwable.class)
                 //.skipLimit(Integer.MAX_VALUE)
                 .skipPolicy(new AlwaysSkipItemSkipPolicy())
-                .listener(skipListener)
+                //.listener(skipListener)
+                .listener(skipListenerImpl)
                 .build();
     }
 
