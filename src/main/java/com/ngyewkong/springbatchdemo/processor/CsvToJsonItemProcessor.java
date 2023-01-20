@@ -12,6 +12,11 @@ public class CsvToJsonItemProcessor implements ItemProcessor<StudentCsv, Student
         System.out.println("Inside Csv to Json Item Processor");
         StudentJson studentJson = new StudentJson();
 
+        // simulate a nullPointer Exception during processing
+        if(studentCsv.getId() == 6) {
+            throw new NullPointerException();
+        }
+
         // remap the fields from studentJdbc to studentJson
         // Student Json gt ignore property for firstName
         studentJson.setId(studentCsv.getId());
