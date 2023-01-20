@@ -3,10 +3,7 @@ package com.ngyewkong.springbatchdemo.config;
 import com.ngyewkong.springbatchdemo.listener.FirstJobListener;
 import com.ngyewkong.springbatchdemo.listener.FirstStepListener;
 import com.ngyewkong.springbatchdemo.model.*;
-import com.ngyewkong.springbatchdemo.processor.CsvToJdbcItemProcessor;
-import com.ngyewkong.springbatchdemo.processor.FirstItemProcessor;
-import com.ngyewkong.springbatchdemo.processor.JdbcToJsonItemProcessor;
-import com.ngyewkong.springbatchdemo.processor.JdbcToXmlItemProcessor;
+import com.ngyewkong.springbatchdemo.processor.*;
 import com.ngyewkong.springbatchdemo.reader.FirstItemReader;
 import com.ngyewkong.springbatchdemo.service.SecondTasklet;
 import com.ngyewkong.springbatchdemo.service.StudentService;
@@ -19,6 +16,7 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.scope.context.ChunkContext;
+import org.springframework.batch.core.step.skip.AlwaysSkipItemSkipPolicy;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.adapter.ItemReaderAdapter;
@@ -27,10 +25,7 @@ import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourc
 import org.springframework.batch.item.database.ItemPreparedStatementSetter;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
-import org.springframework.batch.item.file.FlatFileFooterCallback;
-import org.springframework.batch.item.file.FlatFileHeaderCallback;
-import org.springframework.batch.item.file.FlatFileItemReader;
-import org.springframework.batch.item.file.FlatFileItemWriter;
+import org.springframework.batch.item.file.*;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor;
@@ -198,6 +193,9 @@ public class SampleJob {
     @Autowired
     private StudentResponseItemWriter studentResponseItemWriter;
 
+    @Autowired
+    private CsvToJsonItemProcessor csvToJsonItemProcessor;
+
     @Bean
     public Job thirdJob() {
         return jobBuilderFactory.get("ItemReadersDemoJob")
@@ -208,7 +206,7 @@ public class SampleJob {
 
     public Step secondChunkStep() {
         return stepBuilderFactory.get("Item Readers Demo Step")
-                .<StudentCsv, StudentCsv>chunk(4)
+                .<StudentCsv, StudentJson>chunk(4)
                 //.<StudentJson, StudentJson>chunk(4)
                 //.<StudentXml, StudentXml>chunk(4)
                 //.<StudentJdbc, StudentJdbc>chunk(4)
@@ -223,19 +221,32 @@ public class SampleJob {
                 // using the jdbc reader to get from db for itemwriter egs
                 //.reader(jdbcCursorItemReader())
                 //.reader(itemReaderAdapter())
+                .processor(csvToJsonItemProcessor)
                 //.processor(jdbcToJsonItemProcessor)
                 //.processor(jdbcToXmlItemProcessor)
                 //.processor(csvToJdbcItemProcessor)
                 //.writer(flatFileItemWriter(null))
-                //.writer(jsonFileItemWriter(null))
+                .writer(jsonFileItemWriter(null))
                 //.writer(staxEventItemWriter(null))
                 //.writer(jdbcBatchItemWriter())
-                .writer(itemWriterAdapter())
+                //.writer(itemWriterAdapter())
                 //.writer(studentCsvItemWriter())
                 //.writer(studentJsonItemWriter)
                 //.writer(studentXmlItemWriter)
                 //.writer(studentJdbcItemWriter)
                 //.writer(studentResponseItemWriter)
+                // for fault tolerance
+                // .faultTolerant()
+                // .skip(Throwable.class)
+                // .skipLimit() how many bad records to skip
+                // use Integer.Max_Value for unknown bad record qty
+                // can also use skipPolicy(new AlwaysSkipItemSkipPolicy())
+                .faultTolerant()
+                .skip(FlatFileParseException.class)
+                // for multi exception handling
+                .skip(Throwable.class)
+                .skipLimit(Integer.MAX_VALUE)
+                .skipPolicy(new AlwaysSkipItemSkipPolicy())
                 .build();
     }
 

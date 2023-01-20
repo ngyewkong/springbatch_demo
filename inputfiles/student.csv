@@ -1,11 +1,11 @@
 ID,First Name,Last Name,Email
 1,John,Smith,john@gmail.com
-2,Apple,Seed,appleseed@appl.com
+2,wrong format here,9,100,Apple,Seed,appleseed@appl.com
 3,Elon,Musk,elonmusk@tsla.com
 4,Bill,Gates,billgates@msft.com
 5,Jeff,Bezos,jeffbezos@amzn.com
 6,Sundar,Pichai,sundarpichai@google.com
-7,Satya,Nadella,satya.nadella@msft.com
+7,2nd wrong format here,yes bad record,Satya,Nadella,satya.nadella@msft.com
 8,Tim,Cook,timcook@apple.com
 9,Jack,Ma,jackma@alibaba.com
 10,Warren,Buffett,warrenbuffett@bershirehathaway.com
