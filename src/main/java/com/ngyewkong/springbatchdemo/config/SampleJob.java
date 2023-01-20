@@ -2,6 +2,7 @@ package com.ngyewkong.springbatchdemo.config;
 
 import com.ngyewkong.springbatchdemo.listener.FirstJobListener;
 import com.ngyewkong.springbatchdemo.listener.FirstStepListener;
+import com.ngyewkong.springbatchdemo.listener.SkipListener;
 import com.ngyewkong.springbatchdemo.model.*;
 import com.ngyewkong.springbatchdemo.processor.*;
 import com.ngyewkong.springbatchdemo.reader.FirstItemReader;
@@ -196,6 +197,10 @@ public class SampleJob {
     @Autowired
     private CsvToJsonItemProcessor csvToJsonItemProcessor;
 
+    // autowried the skip listener
+    @Autowired
+    private SkipListener skipListener;
+
     @Bean
     public Job thirdJob() {
         return jobBuilderFactory.get("ItemReadersDemoJob")
@@ -242,11 +247,12 @@ public class SampleJob {
                 // use Integer.Max_Value for unknown bad record qty
                 // can also use skipPolicy(new AlwaysSkipItemSkipPolicy())
                 .faultTolerant()
-                .skip(FlatFileParseException.class)
+                //.skip(FlatFileParseException.class)
                 // for multi exception handling
                 .skip(Throwable.class)
-                .skipLimit(Integer.MAX_VALUE)
+                //.skipLimit(Integer.MAX_VALUE)
                 .skipPolicy(new AlwaysSkipItemSkipPolicy())
+                .listener(skipListener)
                 .build();
     }
 
