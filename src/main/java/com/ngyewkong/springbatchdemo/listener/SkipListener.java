@@ -1,8 +1,10 @@
 package com.ngyewkong.springbatchdemo.listener;
 
 import com.ngyewkong.springbatchdemo.model.StudentCsv;
+import com.ngyewkong.springbatchdemo.model.StudentJson;
 import org.springframework.batch.core.annotation.OnSkipInProcess;
 import org.springframework.batch.core.annotation.OnSkipInRead;
+import org.springframework.batch.core.annotation.OnSkipInWrite;
 import org.springframework.batch.item.file.FlatFileParseException;
 import org.springframework.stereotype.Component;
 
@@ -33,6 +35,15 @@ public class SkipListener {
         // create file
         createFile("/Users/ngyewkong/IdeaProjects/springbatch-demo/ItemReadersDemoJob/processor/SkipInProcess.txt",
                 studentCsv.toString());
+    }
+
+    // use the @OnSkipInWrite annotation
+    // take in writer output type & throwable exception as input arguments
+    @OnSkipInWrite
+    public void skipInWrite(StudentJson studentJson, Throwable throwable) {
+        // create file
+        createFile("/Users/ngyewkong/IdeaProjects/springbatch-demo/ItemReadersDemoJob/writer/SkipInWrite.txt",
+                studentJson.toString());
     }
 
     // filewriter helper

@@ -1,6 +1,5 @@
 [
  {"id":1,"email":"john@gmail.com","last_name":"Smith"},
- {"id":3,"email":"elonmusk@tsla.com","last_name":"Musk"},
  {"id":4,"email":"billgates@msft.com","last_name":"Gates"},
  {"id":5,"email":"jeffbezos@amzn.com","last_name":"Bezos"},
  {"id":8,"email":"timcook@apple.com","last_name":"Cook"},
