@@ -2,3 +2,7 @@
 2,wrong format here,9,100,Apple,Seed,appleseed@appl.com -> error occurred on Fri Jan 20 17:50:15 SGT 2023
 2,wrong format here,9,100,Apple,Seed,appleseed@appl.com -> error occurred on Fri Jan 20 17:50:15 SGT 2023
 7,2nd wrong format here,yes bad record,Satya,Nadella,satya.nadella@msft.com -> error occurred on Fri Jan 20 17:50:15 SGT 2023
+2,wrong format here,9,100,Apple,Seed,appleseed@appl.com -> error occurred on Fri Jan 20 18:20:33 SGT 2023
+2,wrong format here,9,100,Apple,Seed,appleseed@appl.com -> error occurred on Fri Jan 20 18:20:33 SGT 2023
+2,wrong format here,9,100,Apple,Seed,appleseed@appl.com -> error occurred on Fri Jan 20 18:20:33 SGT 2023
+7,2nd wrong format here,yes bad record,Satya,Nadella,satya.nadella@msft.com -> error occurred on Fri Jan 20 18:20:33 SGT 2023
