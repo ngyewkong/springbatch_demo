@@ -256,7 +256,15 @@ public class SampleJob {
                 // for multi exception handling
                 .skip(Throwable.class)
                 //.skipLimit(Integer.MAX_VALUE)
-                .skipPolicy(new AlwaysSkipItemSkipPolicy())
+                //.skipPolicy(new AlwaysSkipItemSkipPolicy())
+                .skipLimit(100)
+                // Spring Batch Retry Mechanism only retry for processor and writer not reader
+                // do not use AlwaysSkipItemSkipPolicy or skipLimit(Integer.MAX_VALUE) with retry
+                // will cause infinite loop -> keep retrying
+                // retryLimit(num) -> num represent the retry count for writer
+                // num-1 represent the retry count for processor
+                .retryLimit(1)
+                .retry(Throwable.class)
                 //.listener(skipListener)
                 .listener(skipListenerImpl)
                 .build();
@@ -392,6 +400,9 @@ public class SampleJob {
                     public String doWrite(List<? extends StudentJson> items) {
                         items.stream().forEach(item -> {
                             if (item.getId() == 3) {
+                                // sys statement to check if retry did happen
+                                System.out.println("Inside Json File Item Writer");
+
                                 throw new NullPointerException();
                             }
                         });

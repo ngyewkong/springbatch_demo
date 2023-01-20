@@ -9,11 +9,12 @@ import org.springframework.stereotype.Component;
 public class CsvToJsonItemProcessor implements ItemProcessor<StudentCsv, StudentJson> {
     @Override
     public StudentJson process(StudentCsv studentCsv) throws Exception {
-        System.out.println("Inside Csv to Json Item Processor");
+
         StudentJson studentJson = new StudentJson();
 
         // simulate a nullPointer Exception during processing
         if(studentCsv.getId() == 6) {
+            System.out.println("Inside Csv to Json Item Processor");
             throw new NullPointerException();
         }
 
